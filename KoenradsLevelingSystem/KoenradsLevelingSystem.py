@@ -8,12 +8,11 @@ import Pluton
 from System import *
 import math
 
-
 #globals
 weapons = {"Thompson","Bolt Action Rifle","Revolver","Hunting Bow","Stone Spear","Wood Spear","Waterpipe Shotgun","Rock","Bone Knife","Salvaged Axe","Hammer","Salvaged Hammer","Hatchet","Pickaxe","Stone Hatchet","Torch","Salvaged Icepick"}
-weaponsDict = {"Thompson":0};
+weaponsDict = {}
 animals = {"stag(Clone)","bear(Clone)","wolf(Clone)","boar(Clone)"}
-animalsDict = {"stag(Clone)":0}
+animalsDict = {}
 
 #class
 class KoenradsLevelingSystem:
@@ -43,7 +42,6 @@ class KoenradsLevelingSystem:
             ini.AddSetting("ExpTable", "boar(Clone)", "150")
             ini.Save()
         ini = Plugin.GetIni("ExpTable")
-
         weaponsDict["Thompson"] = int(ini.GetSetting("ExpTable", "Thompson"))
         weaponsDict["Bolt Action Rifle"] = int(ini.GetSetting("ExpTable", "Bolt Action Rifle"))
         weaponsDict["Revolver"] = int(ini.GetSetting("ExpTable", "Revolver"))
