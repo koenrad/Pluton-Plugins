@@ -14,10 +14,16 @@ class NameChanger:
             ini.Save()
         ini = Plugin.GetIni("NameChanger")
         self.AdminOnly = ini.GetBoolSetting("NameChanger", "AdminOnly", True)
-        Server.BroadcastFrom("NameChanger", str(self.AdminOnly))
     def On_Command(self, cmd):
         player = cmd.User
         args = cmd.args
+        if cmd.cmd.lower() == "help":
+            if self.AdminOnly:
+                if not player.Admin:
+                    return
+            player.MessageFrom("NameChanger", "/setnick [nickname], /removenick")
+
+
         if cmd.cmd.lower() == "setnick":
             if len(args) > 0:
                 if self.AdminOnly:
@@ -31,6 +37,10 @@ class NameChanger:
                 player.basePlayer.displayName = altNick
                 player.MessageFrom("NameChanger", "Your new nickname is " + altNick)
             else:
+                if self.AdminOnly:
+                    if not player.Admin:
+                        player.MessageFrom("NameChanger", "Command not found")
+                        return
                 player.MessageFrom("NameChanger", "Use /setnick [new name] to change your name")
 
         if cmd.cmd.lower() == "removenick":
