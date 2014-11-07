@@ -1,5 +1,5 @@
 __author__ = 'koenrad'
-__version__ = '0.1'
+__version__ = '0.2'
 
 import clr
 clr.AddReferenceByPartialName("Pluton")
@@ -7,13 +7,20 @@ import Pluton
 
 class NameChanger:
     AdminOnly = True
+    LimitChars = True
+    ValidChars = ""
     def On_PluginInit(self):
         if not Plugin.IniExists("NameChanger"):
             ini = Plugin.CreateIni("NameChanger")
             ini.AddSetting("NameChanger", "AdminOnly", "true")
+            ini.AddSetting("NameChanger", "LimitChars", "true")
+            ini.AddSetting("NameChanger", "ValidChars", "abcdefghijklmnopqrstuvwxyz 0123456789")
             ini.Save()
         ini = Plugin.GetIni("NameChanger")
         self.AdminOnly = ini.GetBoolSetting("NameChanger", "AdminOnly", True)
+        self.LimitChars = ini.GetBoolSetting("NameChanger", "LimitChars", True)
+        self.ValidChars = ini.GetSetting("NameChanger", "ValidChars")
+
     def On_Command(self, cmd):
         player = cmd.User
         args = cmd.args
@@ -23,7 +30,6 @@ class NameChanger:
                     return
             player.MessageFrom("NameChanger", "/setnick [nickname], /removenick")
 
-
         if cmd.cmd.lower() == "setnick":
             if len(args) > 0:
                 if self.AdminOnly:
@@ -31,6 +37,16 @@ class NameChanger:
                         player.MessageFrom("NameChanger", "Command not found")
                         return
                 altNick = " ".join(args)
+                if self.LimitChars: #Check name for valid chars
+                    valid = False
+                    for nchar in altNick:
+                        for vchar in self.ValidChars:
+                            if nchar == vchar:
+                                valid = True
+                                break
+                        if not valid:
+                            player.MessageFrom("NameChanger", "Invalid character: " + nchar)
+                            return
                 if DataStore.Get("origname", str(player.SteamID)) is None:
                     DataStore.Add("origname", str(player.SteamID), player.basePlayer.displayName)
                 DataStore.Add("nickname", str(player.SteamID), altNick)
@@ -57,6 +73,9 @@ class NameChanger:
             player.MessageFrom("NameChanger", "Nickname removed")
 
     def On_Chat(self, msg):
+        if msg.User.basePlayer.displayName != msg.User.basePlayer.net.connection.username:
+            msg.BroadcastName = msg.User.basePlayer.displayName
+            return
         altNick = DataStore.Get("nickname", str(msg.User.SteamID))
         if altNick is None:
             return

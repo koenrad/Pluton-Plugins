@@ -1,11 +1,9 @@
 __author__ = 'koenrad'
-__version__ = '0.2'
+__version__ = '0.3'
 
 import clr
-
 clr.AddReferenceByPartialName("Pluton")
 import Pluton
-from System import *
 import math
 
 #globals
@@ -42,6 +40,7 @@ class KoenradsLevelingSystem:
             ini.AddSetting("ExpTable", "boar(Clone)", "150")
             ini.Save()
         ini = Plugin.GetIni("ExpTable")
+
         weaponsDict["Thompson"] = int(ini.GetSetting("ExpTable", "Thompson"))
         weaponsDict["Bolt Action Rifle"] = int(ini.GetSetting("ExpTable", "Bolt Action Rifle"))
         weaponsDict["Revolver"] = int(ini.GetSetting("ExpTable", "Revolver"))
@@ -72,7 +71,7 @@ class KoenradsLevelingSystem:
 
         if cmd.cmd.lower() == "lvl":
             if len(args) > 0:
-                target = getPlayer(player,String.Join(" ", args),"KLS")
+                target = getPlayer(player," ".join(args),"KLS")
                 if target is not None:
                     userID = target.SteamID
                     suicides = getKey("suicides", userID, 0)
@@ -98,7 +97,7 @@ class KoenradsLevelingSystem:
 
         if cmd.cmd.lower() == "kills":
             if len(args) > 0:
-                target = getPlayer(player,String.Join(" ", args),"KLS")
+                target = getPlayer(player," ".join(args),"KLS")
                 if target is not None:
                     userID = target.SteamID
                     player.MessageFrom("KLS", "Koenrad's Leveling System: " + target.Name + "'s kills are:" )
@@ -113,7 +112,7 @@ class KoenradsLevelingSystem:
 
         elif cmd.cmd.lower() == "exp":
             if player.Admin:
-                giveExp(player.SteamID, 1000)
+                giveExp(player.SteamID, 1)
                 item = Pluton.InvItem("Wood")
                 player.Inventory.Add(item)
                 expmodifier = "1." + str(getKey("level", player.SteamID, 1))
@@ -146,9 +145,21 @@ class KoenradsLevelingSystem:
                 giveExp(attackerID, exp)
                 break
 
+    def On_PlayerConnected(self, player):
+        playerDict = Plugin.CreateDict()
+        playerDict["player"] = player
+        Plugin.CreateParallelTimer("OnConnectTimer", 10000, playerDict).Start()
+        giveExp(player.SteamID, 0)
+
+
+    def OnConnectedTimerCallBack(self, timer):
+        player = timer.Args["player"]
+        giveExp(player.SteamID, 0)
+        player.MessageFrom("KLS", "Nigga plz.... Get admin nub!")
+        timer.Kill()
+
     def On_PlayerDied(self, PlayerDeathEvent):
         if PlayerDeathEvent.Attacker.ToPlayer() is None:
-            Server.BroadcastFrom("KLS", PlayerDeathEvent.Attacker.modelPrefab)
             return
 
         attacker = PlayerDeathEvent.Attacker
@@ -178,7 +189,18 @@ def checkLevel(userID, playerExp):
             lvlExp = points/4
             if playerExp < lvlExp:
                 DataStore.Add("level",userID,level)
-                return level
+                break
+                #return level
+        player = Server.FindPlayer(long(userID))
+        if player is None:
+            return
+
+        altNick = DataStore.Get("nickname", str(userID))
+        if altNick is None:
+            player.basePlayer.displayName = player.basePlayer.net.connection.username + "[" + str(level) + "]"
+            return
+        player.basePlayer.displayName = altNick + "[" + str(level) + "]"
+        return level
 
 def getKey(table, key, default):
     if not DataStore.ContainsKey(table, key):
